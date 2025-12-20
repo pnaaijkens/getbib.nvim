@@ -1,0 +1,1 @@
+print("getbib plugin loaded")
