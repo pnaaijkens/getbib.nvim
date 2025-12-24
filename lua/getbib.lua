@@ -29,12 +29,15 @@ M.setup = function()
 end
 
 -- get bibtex from identifier
----@param id string ID of the paper(s) to look up
+---@param ids string[] ID of the paper(s) to look up
 ---@return string[] array of strings
-M.get_bibtex = function(id)
-    local obj = vim.system({M.config.cmd, '--no-interactive', id}, { text = true }):wait()
+M.get_bibtex = function(ids)
+    local obj = vim.system({M.config.cmd, '--no-interactive', unpack(ids)}, { text = true }):wait()
 
-    -- TODO: error handling
+    if obj.code ~= 0 then
+        vim.notify("Command exited with non-zero error code.")
+        return {}
+    end
     return vim.split(obj.stdout, '\n')
 end
 
@@ -98,16 +101,99 @@ local open_float = function(lines)
     vim.wo[win].wrap = false
 end
 
+-- Get start and end of visual selection.
+local get_visual_selection_pos = function()
+    local start_pos = vim.fn.getpos("v")
+    local end_pos = vim.fn.getpos(".")
+    local vstart, vend
+
+    -- see if we need to swap
+    if (start_pos[2] > end_pos[2]) or ((start_pos[2] == end_pos[2]) and (start_pos[3] > end_pos[3])) then
+        vstart = { row = end_pos[2], col = end_pos[3] }
+        vend = { row = start_pos[2], col = start_pos[3] }
+    else
+        vstart = { row = start_pos[2], col = start_pos[3] }
+        vend = { row = end_pos[2], col = end_pos[3] }
+    end
+
+    -- in visual line mode, "v" and "." marks are not necessarily at the start/end of the line
+    if vim.api.nvim_get_mode().mode == "V" then
+        vstart.col = 1
+        vend.col = 2000000
+    end
+
+    return vstart, vend
+end
+
+local table_flatten        -- we need to define the variable first, so we can call it recursively 
+-- Flatten a table to a single list
+---@param tbl table table to flatten
+---@param flat? table table to store result in. Can be left empty
+---@return table flattened table
+table_flatten = function(tbl, flat)
+    flat = flat or {}
+
+    for _, v in ipairs(tbl) do
+        if type(v) == "table" then
+            table_flatten(v, flat)
+        else
+            flat[#flat+1] = v
+        end
+    end
+    return flat
+end
+
 -- handle the NeoVim command GetBib. 
 ---@param args table Arguments supplied
-M.get_bib_command = function(args)
+M.get_bib_command = function(args, insert)
+    local lines = {}
+    local id
+    local mode = "insert"
+    local vstart, vend
+
     -- check if supplied with any argument. If so, insert the resulting bibtex
     if (vim.tbl_count(args.fargs) > 0) then
-        local lines = M.get_bibtex(table.remove(args.fargs, 1))
-        remove_trailing_lines(lines)
-        -- vim.api.nvim_put(lines, "l", true, true)
-        open_float(lines)
+        id = args.fargs
+        mode = "insert"
+    else
+        mode = "replace"
+
+        -- if not coming from visual mode, try to select ID under the cursor
+        if not (vim.fn.mode() == 'v' or vim.fn.mode() == 'V') then
+            -- try to do a visual select of keyword
+            local old_keyword = vim.bo[0].iskeyword
+            vim.bo[0].iskeyword = "a-z,A-Z,48-57,:,.,/,-,_"
+            vim.cmd("normal! viw")
+            vim.bo[0].iskeyword = old_keyword
+        end
+
+        vstart, vend = get_visual_selection_pos()
+
+        -- note: indexing is zero-based for nvim_buf_get_text, but 1-based for getpos()
+        local ids = vim.api.nvim_buf_get_text(0, vstart.row-1, vstart.col-1, vend.row-1, vend.col, {})
+        ids = map(ids, function (x)
+            return vim.split(x, "%s")
+        end)
+        id = table_flatten(ids)
+    end
+
+    -- id should be set now
+    lines = M.get_bibtex(id)
+    remove_trailing_lines(lines)
+    if vim.tbl_count(lines) == 0 then
+        vim.notify("No bibliographic entries found")
         return
+    end
+
+    -- either insert or replace
+    if insert then
+        if mode == "insert" then
+            vim.api.nvim_put(lines, "l", true, true)
+        elseif mode == "replace" then
+            vim.api.nvim_buf_set_text(0, vstart.row-1, vstart.col-1, vend.row-1, vend.col, lines)
+        end
+    else
+        open_float(lines)
     end
 end
 
