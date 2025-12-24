@@ -18,9 +18,13 @@ For example, for [lazy.nvim](https://github.com/folke/lazy.nvim), use the follow
 ```lua
 {
     "pnaaijkens/getbib.nvim",
-    opts = {}
+    opts = {
+        -- cmd = "pybibget"
+    }
 }
 ```
+Uncomment and update the `cmd = ...` line if the `pybibget` binary is not in the `$PATH`.
+You can verify the configuration using `:checkhealth getbib`.
 
 ## Usage
 The plugin defines two commands.
