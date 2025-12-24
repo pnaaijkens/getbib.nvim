@@ -51,7 +51,13 @@ Github, using
 >sh
     pip install git+https://github.com/wirhabenzeit/pybibget.git
 <
-The command `pybibget` is assumed to be available in `$PATH`$.
+The command `pybibget` is assumed to be available in `$PATH`$. If it is
+located in a different location, set the `cmd` configuration option, e.g.
+>lua
+    require("getbib").setup( { cmd = "/path/to/pybibget" } )
+<
+
+You can check the configuration with `:checkhealth bibget`.
 
 NOTE: Some options for `pybibget`, e.g. looking up MathSciNet references,
 require a relevant subscription or API key. See the linked page above for more

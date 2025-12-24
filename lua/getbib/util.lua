@@ -4,7 +4,8 @@ local util = {}
 -- check if the configured command is executable
 ---@return boolean Returns true if configured command is executable
 util.check_executable = function(cmd)
-    if vim.fn.executable(cmd) then
+    print(cmd)
+    if vim.fn.executable(cmd) == 1 then
         return true
     else
         return false
