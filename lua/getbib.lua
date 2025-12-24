@@ -1,29 +1,24 @@
+local util = require("getbib.util")
+
 local M = {}
 
 -- configuration files
 ---@class Config
 ---@field cmd string Name of executable
-local config = {
+local default_config = {
   cmd = "pybibget",
 }
 
 -- this holds our configuration
-M.config = config
-
--- check if the configured command is executable
----@return boolean Returns true if configured command is executable
-local check_executable = function()
-    if vim.fn.executable(M.config.cmd) then
-        return true
-    else
-        return false
-    end
-end
+M.config = default_config
 
 -- setup variables and check
 -- throws an error if something is wrong
-M.setup = function()
-    if not check_executable() then
+M.setup = function(opts)
+    opts = opts or {}
+    M.config = vim.tbl_deep_extend('force', default_config, opts)
+
+    if not util.check_executable(M.config.cmd) then
         error("Command '" .. M.config.cmd .. "' not found")
     end
 end
@@ -41,35 +36,11 @@ M.get_bibtex = function(ids)
     return vim.split(obj.stdout, '\n')
 end
 
--- Remove empty leading/trailing empty lines. Note this function changes the variable lines!
----@param lines string[] lines to remove
-local remove_trailing_lines = function(lines)
-    while lines[1] == "" do
-        table.remove(lines,1)
-    end
-    while lines[#lines] == "" do
-        table.remove(lines)
-    end
-end
-
--- apply function to table and store result in new table
----@param x table table to apply values to
----@param fun function function to apply, should take one parameter
----@return table Table with resulting values
-local map = function(x, fun)
-    local ret = {}
-
-    for k, v in pairs(x) do
-        ret[k] = fun(v)
-    end
-    return ret
-end
-
 -- display a popup window with lines
 ---@param lines string[] Lines to show in the float
 local open_float = function(lines)
     -- find longest line
-    local max_content_width = math.max(unpack(map(lines, string.len)))
+    local max_content_width = math.max(unpack(util.map(lines, string.len)))
     local max_content_height = vim.tbl_count(lines)
     if max_content_height == 0 then
         vim.notify("Empty float", vim.log.levels.INFO)
@@ -125,24 +96,6 @@ local get_visual_selection_pos = function()
     return vstart, vend
 end
 
-local table_flatten        -- we need to define the variable first, so we can call it recursively 
--- Flatten a table to a single list
----@param tbl table table to flatten
----@param flat? table table to store result in. Can be left empty
----@return table flattened table
-table_flatten = function(tbl, flat)
-    flat = flat or {}
-
-    for _, v in ipairs(tbl) do
-        if type(v) == "table" then
-            table_flatten(v, flat)
-        else
-            flat[#flat+1] = v
-        end
-    end
-    return flat
-end
-
 -- handle the NeoVim command GetBib. 
 ---@param args table Arguments supplied
 M.get_bib_command = function(args, insert)
@@ -171,15 +124,15 @@ M.get_bib_command = function(args, insert)
 
         -- note: indexing is zero-based for nvim_buf_get_text, but 1-based for getpos()
         local ids = vim.api.nvim_buf_get_text(0, vstart.row-1, vstart.col-1, vend.row-1, vend.col, {})
-        ids = map(ids, function (x)
+        ids = util.map(ids, function (x)
             return vim.split(x, "%s")
         end)
-        id = table_flatten(ids)
+        id = util.table_flatten(ids)
     end
 
     -- id should be set now
     lines = M.get_bibtex(id)
-    remove_trailing_lines(lines)
+    util.remove_trailing_lines(lines)
     if vim.tbl_count(lines) == 0 then
         vim.notify("No bibliographic entries found")
         return
