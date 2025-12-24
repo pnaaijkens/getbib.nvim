@@ -1,8 +1,117 @@
-*getbib-docs.txt*
+*getbib-docs.txt*			       Plugin to retrieve BibTeX data
 
-==============================================================================
+=============================================================================
+CONTENTS						     *getbib-contents*
 
-A plugin to look up and add BibTeX entries basid on arXiv identified, DOI or
-MathSciNet reference.
+  Introduction .................................. |getbib-intro|
+  Configuration ................................. |getbib-config|
+  Keymaps ....................................... |getbib-keymap|
+  Commands ...................................... |getbib-commands|
+  License ....................................... |getbib-license|
+
+=============================================================================
+INTRODUCTION						       *getbib-intro*
+
+A plugin to look up and add BibTeX entries based on bibliographic identifiers
+such as arXiv ID, DOI or MathSciNet reference. Metadata retrieval is done by
+an external program, such as `pybibget`. As such, supported identifiers and
+output depend on the external program used. See |getbib-config| for further
+details.
+
+The plugin defines two commands (see |getbib-commands| for details). The
+first, `:GetBib`, looks up the BibTeX for the identifier(s) and inserts or
+replaces the resulting data in the current buffer. The command `:GetBibPopup`
+works similarly, but displays the result in a floating window instead of
+inserting it in the buffer.
+
+Identifiers can be specified in more than one way. The plugin tries to be
+smart to find identifiers. The options are:
+
+    1. Supply the identifiers as arguments to the functions above. Each
+       identifier should be separated by a space.
+
+    2. Select the identifier(s) in visual mode and run one of the commmands.
+       A default keymap <Leader>gb is provided. If BibTeX data is found, the 
+       selected text is replaced by the BibTeX data, or it is displayed in a
+       float.
+
+    3. Call the command without any parameters and not from visual mode. In
+       this case, the plugin tries to find the <cword> under the cursor 
+       (with custom settings appropriate for identifiers). The plugin then 
+       works the same as in method 2, with the <cword> selected in visual
+       mode.
+
+=============================================================================
+CONFIGURATION						      *getbib-config*
+
+Currently the plugin only supports `pybibget`, v0.1.1 or higher. See
+https://github.com/wirhabenzeit/pybibget for details. At present, the latest
+version on `pypi` is v0.1.0, so you will need to install it directly from
+Github, using
+>sh
+    pip install git+https://github.com/wirhabenzeit/pybibget.git
+<
+The command `pybibget` is assumed to be available in `$PATH`$.
+
+NOTE: Some options for `pybibget`, e.g. looking up MathSciNet references,
+require a relevant subscription or API key. See the linked page above for more
+information.
+
+=============================================================================
+KEYMAPS							      *getbib-keymap*
+
+The plugin defines two key mappings. A global mapping `<Leader>gb` opens up a
+float with BibTeX data for the identified under the cursor. If the |filetype|
+is `bib`, a buffer-local mapping `<Leader>gb` is defined in visual mode. This
+replaces the visually selected text with the retrieved BibTeX data.
+
+NOTE: Due to limitations of the external programs, if more than one identifier
+is selected, but only for some of them BibTeX data is returned, there is no
+indication of which identifiers are missing.
+
+=============================================================================
+COMMANDS						      *getbib-commands*
+
+There are two commands defined to retrieve BibTeX data. They work on the same
+way, but one displays the results in a floating window, whilst the other
+inserts (or replaces) it in the current buffer.
+
+								*:GetBib*
+								*:GetBibPopup*
+:GetBib		<id1> ... <idN>
+:GetBibPopup	<id1> ... <idN>
+
+    Retrieve BibTeX data for the specified arguments. The <id>s can be an
+    arXiv identfier, DOI, or MathSciNet reference. See `pybibget`
+    documentation for valid options. The resulting data is either inserted
+    into the buffer or displayed in a floating popup window (for the
+    `:GetBibPopup` command). If no argument is specified, the id is taken from
+    the word under the cursor. If in VISUAL mode, the selected text is used
+    for the IDs. The selection is replaced with the retrieved BibTeX data.
+
+=============================================================================
+LICENSE							      *getbib-license*
+
+MIT License
+
+Copyright (c) 2025 Pieter Naaijkens
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 vim:tw=78:ts=8:noet:ft=help:norl:
