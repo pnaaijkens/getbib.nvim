@@ -90,7 +90,9 @@ local get_visual_selection_pos = function()
     -- in visual line mode, "v" and "." marks are not necessarily at the start/end of the line
     if vim.api.nvim_get_mode().mode == "V" then
         vstart.col = 1
-        vend.col = 2000000
+        -- find last column in last row
+        local line = vim.api.nvim_buf_get_lines(0, vend.row - 1, vend.row, false)[1]
+        vend.col = #line
     end
 
     return vstart, vend
@@ -143,6 +145,7 @@ M.get_bib_command = function(args, insert)
         if mode == "insert" then
             vim.api.nvim_put(lines, "l", true, true)
         elseif mode == "replace" then
+            print(vim.inspect(vstart), vim.inspect(vend))
             vim.api.nvim_buf_set_text(0, vstart.row-1, vstart.col-1, vend.row-1, vend.col, lines)
         end
     else
