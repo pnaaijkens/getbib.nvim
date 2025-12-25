@@ -145,7 +145,6 @@ M.get_bib_command = function(args, insert)
         if mode == "insert" then
             vim.api.nvim_put(lines, "l", true, true)
         elseif mode == "replace" then
-            print(vim.inspect(vstart), vim.inspect(vend))
             vim.api.nvim_buf_set_text(0, vstart.row-1, vstart.col-1, vend.row-1, vend.col, lines)
         end
     else
