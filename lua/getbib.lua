@@ -6,11 +6,21 @@ local M = {}
 ---@class Config
 ---@field cmd string Name of executable
 local default_config = {
-  cmd = "pybibget",
+    backend = "pybibget",
+    cmd = "pybibget",
+    tidy = {
+        enabled = false,
+        tidy_cmd = "bibtex-tidy",
+        tidy_opts = {
+            "--curly",
+            "--quiet"
+        }
+    }
 }
 
 -- this holds our configuration
 M.config = default_config
+M.setup_done = false
 
 -- setup variables and check
 -- throws an error if something is wrong
@@ -21,12 +31,21 @@ M.setup = function(opts)
     if not util.check_executable(M.config.cmd) then
         error("Command '" .. M.config.cmd .. "' not found")
     end
+
+    -- check if bibtex-tidy is enabled
+    if M.config.tidy.enabled then
+        if not util.check_executable(M.config.tidy.tidy_cmd) then
+            vim.notify("Command '" .. M.config.tidy.tidy_cmd .. "' not found. Disablying bibtex-tidy", vim.log.levels.WARN)
+            M.config.tidy.enabled = false
+        end
+    end
+    M.setup_done = true
 end
 
--- get bibtex from identifier
+-- get bibtex from identifier (pybibtex backend)
 ---@param ids string[] ID of the paper(s) to look up
 ---@return string[] array of strings
-M.get_bibtex = function(ids)
+local get_bibtex_pybibget = function(ids)
     local obj = vim.system({M.config.cmd, '--no-interactive', unpack(ids)}, { text = true }):wait()
 
     if obj.code ~= 0 then
@@ -35,6 +54,9 @@ M.get_bibtex = function(ids)
     end
     return vim.split(obj.stdout, '\n')
 end
+
+-- default implementation of data fetcher
+M.get_bibtex = get_bibtex_pybibget
 
 -- display a popup window with lines
 ---@param lines string[] Lines to show in the float
@@ -98,6 +120,18 @@ local get_visual_selection_pos = function()
     return vstart, vend
 end
 
+-- filter through bibtex-tidy
+---@param input string[] Bibtex to format
+---@return string[] Formatted Bibtex
+M.format_bibtex = function(input)
+    if not M.config.tidy.enabled then
+        return input
+    end
+
+    local cmd = vim.system({M.config.tidy.tidy_cmd, unpack(M.config.tidy.tidy_opts)}, { text = true, stdin = input }):wait()
+    return vim.split(cmd.stdout, "\n")
+end
+
 -- handle the NeoVim command GetBib. 
 ---@param args table Arguments supplied
 M.get_bib_command = function(args, insert)
@@ -135,6 +169,11 @@ M.get_bib_command = function(args, insert)
     -- id should be set now
     lines = M.get_bibtex(id)
     util.remove_trailing_lines(lines)
+
+    if M.config.tidy.enabled then
+        lines = M.format_bibtex(lines)
+    end
+
     if vim.tbl_count(lines) == 0 then
         vim.notify("No bibliographic entries found")
         return

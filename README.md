@@ -26,6 +26,22 @@ For example, for [lazy.nvim](https://github.com/folke/lazy.nvim), use the follow
 Uncomment and update the `cmd = ...` line if the `pybibget` binary is not in the `$PATH`.
 You can verify the configuration using `:checkhealth getbib`.
 
+You can optionally run the generated BibTeX through [bibtex-tidy](https://github.com/FlamingTempura/bibtex-tidy) to generate a cleaner and more consistent bibfile.
+This feature is disabled by default and requires that `bibtex-tidy` is installed.
+To enable it, add the following to `opts` above:
+```lua
+    tidy = {
+        enabled = true,
+        -- the following are defaults and can be omitted or changed if desired
+        tidy_cmd = "bibtex-tidy"
+        tidy_opts = {
+            "--curly",
+            "--quiet"
+        }
+    }
+```
+See `bitbex-tidy --help` for possible options.
+
 ## Usage
 The plugin defines two commands.
 The first, `:GetBib`, looks up the BibTeX for the identifier(s) and inserts or

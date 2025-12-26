@@ -5,6 +5,7 @@ CONTENTS						     *getbib-contents*
 
   Introduction .................................. |getbib-intro|
   Configuration ................................. |getbib-config|
+    BibTeX formatting ........................... |getbib-tidy|
   Keymaps ....................................... |getbib-keymap|
   Commands ...................................... |getbib-commands|
   License ....................................... |getbib-license|
@@ -62,6 +63,27 @@ You can check the configuration with `:checkhealth bibget`.
 NOTE: Some options for `pybibget`, e.g. looking up MathSciNet references,
 require a relevant subscription or API key. See the linked page above for more
 information.
+
+								 *getbib-tidy*
+BibTeX formatting ~
+
+You can optionally use `bibtex-tidy` to futher format the generated BibTeX.
+For details see https://github.com/FlamingTempura/bibtex-tidy This feature is
+disabled by default. It can be enabled by adding the following to the options
+table when calling `setup()` as above (or using your favourite packaging
+manager):
+>lua
+    tidy = {
+        enabled = true,
+        -- the following are defaults and can be omitted or changed if desired
+        tidy_cmd = "bibtex-tidy"
+        tidy_opts = {
+            "--curly",
+            "--quiet"
+        }
+    }
+<
+See `bitbex-tidy --help` for possible options.
 
 =============================================================================
 KEYMAPS							      *getbib-keymap*
